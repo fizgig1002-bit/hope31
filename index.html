@@ -3,51 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>표정이 변하는 인생 그래프</title>
+    <title>나의 인생 그래프</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
-        body { font-family: 'Nanum Gothic', sans-serif; background-color: #fff9db; padding: 20px; text-align: center; }
-        .container { max-width: 850px; margin: 0 auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
-        h2 { color: #f08c00; }
-        .input-group { margin-bottom: 10px; display: flex; gap: 8px; justify-content: center; align-items: center; }
-        input { padding: 10px; border: 2px solid #ffe066; border-radius: 8px; outline: none; }
-        input:focus { border-color: #fab005; }
+        body { font-family: 'Nanum Gothic', sans-serif; background-color: #fdf2f2; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        
+        /* 제목 스타일 */
+        #main-title { color: #e03131; text-align: center; font-size: 28px; margin-bottom: 20px; }
+        
+        .setup-section { background: #fff5f5; padding: 20px; border-radius: 15px; margin-bottom: 20px; text-align: center; }
+        .input-group { margin-bottom: 10px; display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; }
+        
+        input { padding: 10px; border: 2px solid #ffa8a8; border-radius: 8px; outline: none; }
+        .name-input { font-size: 18px; width: 200px; border-color: #ff8787; text-align: center; }
         .age { width: 60px; }
-        .score { width: 120px; }
-        .label { width: 200px; }
-        button { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .btn-add { background-color: #ffec99; color: #856404; }
-        .btn-draw { background-color: #fab005; color: white; margin-left: 10px; }
+        .score { width: 110px; }
+        .label { width: 220px; }
+        
+        button { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 16px; }
+        .btn-add { background-color: #ffc9c9; color: #c92a2a; }
+        .btn-draw { background-color: #fa5252; color: white; margin-left: 10px; }
+        .btn-save { background-color: #343a40; color: white; margin-top: 20px; width: 100%; }
         button:hover { opacity: 0.8; transform: translateY(-2px); }
-        #chart-container { margin-top: 30px; position: relative; height: 450px; width: 100%; }
+
+        /* 결과 화면 레이아웃 (그래프 + 연표) */
+        .result-layout { display: flex; gap: 20px; margin-top: 30px; flex-wrap: wrap; }
+        #chart-area { flex: 2; min-width: 400px; height: 450px; background: white; border-radius: 10px; padding: 10px; border: 1px solid #eee; }
+        #timeline-area { flex: 1; min-width: 250px; background: #fffaf0; border-radius: 10px; padding: 20px; border: 1px dashed #ffc078; }
+        
+        .timeline-title { font-weight: bold; color: #d9480f; margin-bottom: 15px; border-bottom: 2px solid #ffdeeb; padding-bottom: 5px; }
+        .timeline-item { margin-bottom: 10px; font-size: 15px; line-height: 1.5; border-left: 3px solid #ffa8a8; padding-left: 10px; }
+
+        #capture-area { padding: 20px; background: white; border-radius: 15px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>🌈 나의 마음 날씨 인생 그래프</h2>
-    <p>나이와 그때의 기분 점수(-10 ~ 10)를 적어보세요!</p>
-    
-    <div id="inputs">
-        <div class="input-group">
-            <input type="number" class="age" placeholder="나이" min="0" max="15">
-            <input type="number" class="score" placeholder="기분(-10~10)" min="-10" max="10">
-            <input type="text" class="label" placeholder="어떤 일이었나요?">
+    <div class="setup-section">
+        <h2 id="main-title">✨ 나의 인생 그래프 ✨</h2>
+        <div style="margin-bottom: 20px;">
+            <input type="text" id="userName" class="name-input" placeholder="이름을 적어주세요" oninput="updateTitle()">
+        </div>
+        
+        <div id="inputs">
+            <div class="input-group">
+                <input type="number" class="age" placeholder="나이" min="0">
+                <input type="number" class="score" placeholder="기분(-10~10)" min="-10" max="10">
+                <input type="text" class="label" placeholder="어떤 일이었나요?">
+            </div>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <button class="btn-add" onclick="addInput()">기억 추가하기 +</button>
+            <button class="btn-draw" onclick="drawChart()">그래프 완성하기 🎨</button>
         </div>
     </div>
 
-    <div style="margin-top: 20px;">
-        <button class="btn-add" onclick="addInput()">칸 늘리기 +</button>
-        <button class="btn-draw" onclick="drawChart()">그래프 그리기 🎨</button>
+    <div id="capture-area">
+        <h2 id="display-title" style="text-align: center; color: #e03131;">✨ 나의 인생 그래프 ✨</h2>
+        <div class="result-layout">
+            <div id="chart-area">
+                <canvas id="lifeChart"></canvas>
+            </div>
+            <div id="timeline-area">
+                <div class="timeline-title">📜 인생 연표</div>
+                <div id="timeline-content">기록을 입력하면 연표가 생겨요!</div>
+            </div>
+        </div>
     </div>
 
-    <div id="chart-container">
-        <canvas id="lifeChart"></canvas>
-    </div>
+    <button class="btn-save" onclick="saveImage()">📸 사진으로 저장하여 제출하기</button>
 </div>
 
 <script>
     let myChart;
+
+    function updateTitle() {
+        const name = document.getElementById('userName').value;
+        const titleText = name ? `✨ 빛나는 ${name}의 인생 그래프 ✨` : `✨ 나의 인생 그래프 ✨`;
+        document.getElementById('main-title').innerText = titleText;
+        document.getElementById('display-title').innerText = titleText;
+    }
 
     function getEmoji(score) {
         const s = Number(score);
@@ -64,7 +103,7 @@
         const div = document.createElement('div');
         div.className = 'input-group';
         div.innerHTML = `
-            <input type="number" class="age" placeholder="나이" min="0" max="15">
+            <input type="number" class="age" placeholder="나이">
             <input type="number" class="score" placeholder="기분" min="-10" max="10">
             <input type="text" class="label" placeholder="어떤 일이었나요?">
         `;
@@ -76,17 +115,30 @@
         const scoreElements = document.querySelectorAll('.score');
         const labelElements = document.querySelectorAll('.label');
 
-        const dataPoints = [];
+        let dataPoints = [];
         for (let i = 0; i < ageElements.length; i++) {
             if (ageElements[i].value !== "" && scoreElements[i].value !== "") {
                 dataPoints.push({
-                    age: ageElements[i].value,
-                    score: scoreElements[i].value,
-                    text: labelElements[i].value,
+                    age: parseInt(ageElements[i].value),
+                    score: parseInt(scoreElements[i].value),
+                    text: labelElements[i].value || "기록 없음",
                     emoji: getEmoji(scoreElements[i].value)
                 });
             }
         }
+
+        // 나이순 정렬
+        dataPoints.sort((a, b) => a.age - b.age);
+
+        // 연표 만들기
+        const timelineContent = document.getElementById('timeline-content');
+        timelineContent.innerHTML = '';
+        dataPoints.forEach(d => {
+            const item = document.createElement('div');
+            item.className = 'timeline-item';
+            item.innerHTML = `<strong>${d.age}살</strong>: ${d.emoji} ${d.text}`;
+            timelineContent.appendChild(item);
+        });
 
         if (myChart) myChart.destroy();
 
@@ -98,39 +150,23 @@
                 datasets: [{
                     label: '행복 지수',
                     data: dataPoints.map(d => d.score),
-                    borderColor: '#fab005',
-                    backgroundColor: 'rgba(250, 176, 5, 0.1)',
-                    borderWidth: 3,
+                    borderColor: '#fa5252', // 빨간색 선
+                    backgroundColor: 'rgba(250, 82, 82, 0.1)',
+                    borderWidth: 4,
                     tension: 0.3,
                     fill: true,
-                    pointRadius: 8,
-                    pointBackgroundColor: '#fff',
-                    pointBorderColor: '#fab005',
-                    pointHoverRadius: 10
+                    pointRadius: 6,
+                    pointBackgroundColor: '#fff'
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    y: { 
-                        min: -10, 
-                        max: 10,
-                        ticks: { stepSize: 2 }
-                    }
+                    y: { min: -10, max: 10 },
+                    x: { grid: { display: false } }
                 },
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const d = dataPoints[context.dataIndex];
-                                return ` [${d.emoji}] ${d.text}: ${d.score}점`;
-                            }
-                        }
-                    },
-                    // 그래프 위에 이모티콘 직접 그리기
-                    legend: { display: false }
-                }
+                plugins: { legend: { display: false } }
             },
             plugins: [{
                 afterDraw: (chart) => {
@@ -140,13 +176,26 @@
                         meta.data.forEach((element, index) => {
                             const { x, y } = element.tooltipPosition();
                             const emoji = dataPoints[index].emoji;
-                            ctx.font = '24px Arial';
+                            ctx.font = '22px Arial';
                             ctx.textAlign = 'center';
-                            ctx.fillText(emoji, x, y - 15); // 점 위에 이모티콘 표시
+                            ctx.fillText(emoji, x, y - 15);
                         });
                     });
                 }
             }]
+        });
+    }
+
+    function saveImage() {
+        const area = document.getElementById('capture-area');
+        const name = document.getElementById('userName').value || "나";
+        
+        html2canvas(area).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `${name}_인생그래프.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+            alert("사진이 저장되었습니다! 저장된 파일을 패들렛에 올려주세요. 😊");
         });
     }
 </script>
